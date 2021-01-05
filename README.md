@@ -9,36 +9,35 @@
 ##### b)Cách triển khai: 
   Kế thừa RecyclerView.Adapter<RecyclerView.ViewHolder>()
 
-    class TaskListAdapter : RecyclerView.Adapter<ViewHolder>() {
-  
-    private val tasks: MutableList<Task> = ArrayList()
+    class DummyRecyclerView : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+    private val listDummy: MutableList<Dummy> = mutableListOf()
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
-        return ViewHolder(inflater.inflate(R.layout.item_task_row, parent, false))
+        return ViewHolder(inflater.inflate(R.layout.item_dummy, parent, false))
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(tasks[position])
+    override fun getItemCount(): Int = listDummy.size
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        (holder as ViewHolder).bind(listDummy[position])
     }
 
-    override fun getItemCount(): Int = tasks.size
+    fun submitList(dummy: List<Dummy>) {
+        listDummy.clear()
+        listDummy.addAll(dummy)
+        notifyDataSetChanged()
+    }
 
-    fun addTask(task: Task) {
-        if (!tasks.contains(task)) {
-            tasks.add(task)
-            notifyItemInserted(tasks.size)
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        fun bind(item: Dummy) {
+            //  itemView.taskTitle.text = task.title
         }
     }
-
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-
-        fun bind(task: Task) {
-            itemView.taskTitle.text = task.title
-        }
-
     }
-}
+
 ##### c)Vấn đề: 
   Vấn đề lớn nhất trong đoạn code này là nó chỉ xử lý việc thêm một Task mới và không xử lý việc xóa hoặc sử một Task. Nếu chúng ta muốn dễ dàng xử lý những trường hợp này, chúng ta có thể sử dụng notifyDataSetChanged() nhưng chúng ta sẽ đánh mất những animation đẹp. Để xử lý chúng đúng, chúng ta cần làm nhiều việc hơn một chút đó là sử dụng DIfUtil.
   
@@ -73,41 +72,34 @@
    – Nếu areItemTheSame() trả về true và areContentsTheSame() trả false sau đó DiffUtil sẽ gọi phương thức này để trả về sự thay đổi.
 
 
-    class UserDiffUtil(
-    private val mOldUsers: List<User>, 
-    private val mNewUsers: List<User>
+    class DummyDiffUtil(
+    private val oldDummy: List<Dummy>,
+    private val newDummy: List<Dummy>
     ) : DiffUtil.Callback() {
-  
-    override fun getOldListSize(): Int {
-        return mOldUsers.size
-    }
 
-    override fun getNewListSize(): Int {
-        return mNewUsers.size
-    }
+    override fun getOldListSize(): Int = oldDummy.size
+
+    override fun getNewListSize(): Int = newDummy.size
 
     override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-        return mOldUsers[oldItemPosition].id === mNewUsers[newItemPosition].id
+        return oldDummy[oldItemPosition].id == newDummy[newItemPosition].id
     }
 
     override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-        val oldUserName = mOldUsers[oldItemPosition].name
-        val newUserName = mNewUsers[newItemPosition].name
+        val oldUserName = oldDummy[oldItemPosition]
+        val newUserName = newDummy[newItemPosition]
         return oldUserName == newUserName
     }
-
-    @Nullable
-    override fun getChangePayload(oldItemPosition: Int, newItemPosition: Int): Any? {
-        return super.getChangePayload(oldItemPosition, newItemPosition)
-    }}}
+    }
 
 Và triển khai trong Adapter
 
-    fun submitList(users: List<User>) {
-    val diffResult = DiffUtil.calculateDiff(UserDiffUtil(mUsers, users))
-    mUsers.clear()
-    mUsers.addAll(users)
-    diffResult.dispatchUpdatesTo(this)}
+     fun submitList(dummy: List<Dummy>) {
+        val diffResult = DiffUtil.calculateDiff(DummyDiffUtil(listDummy, dummy))
+        listDummy.clear()
+        listDummy.addAll(dummy)
+        diffResult.dispatchUpdatesTo(this)
+    }
     
 ##### c)Vấn đề: 
   Không có vấn đề gì cả, chỉ là chưa tối ưu được hết DiffUtil
@@ -234,7 +226,7 @@ Tốc biến không qua tường :v
     }
     
     
-END_GAME
+### END_GAME
 
 
     
